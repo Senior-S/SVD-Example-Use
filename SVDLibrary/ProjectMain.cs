@@ -14,6 +14,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Networking;
 using Logger = Rocket.Core.Logging.Logger;
 
 namespace SeniorS.SVDLibrary;
@@ -75,7 +76,8 @@ public class SVDLibrary : RocketPlugin<Configuration>
                             byte[] audioData = await response.Content.ReadAsByteArrayAsync();
 
                             // This directory should be replaced with one of user election.
-                            File.WriteAllBytes($"{Rocket.Unturned.Environment.RocketDirectory}/{data.Key} - {fileTimeUTC}.wav", audioData);
+                            string path = Path.Combine(Rocket.Unturned.Environment.RocketDirectory, $"{data.Key} - {fileTimeUTC}.wav");
+                            File.WriteAllBytes(path, audioData);
                         }
                         else
                         {
@@ -129,6 +131,40 @@ public class SVDLibrary : RocketPlugin<Configuration>
                 Console.WriteLine($"An error occurred: {ex.InnerException.Message}");
             }
         });
+    }
+
+    // This function is better prepare for a daily use so you can safely copy paste this function.
+    IEnumerator Upload(List<byte[]> data, string token, string key)
+    {
+        long fileTimeUTC = DateTime.UtcNow.ToFileTimeUtc();
+        List<IMultipartFormSection> multipartFormSections = new();
+        data.ForEach(c =>
+        {
+            int index = data.IndexOf(c);
+            multipartFormSections.Add(new MultipartFormFileSection($"packet_{index}", c, $"{index}.bin", "application/octet-stream"));
+        });
+
+        using UnityWebRequest request = UnityWebRequest.Post(Configuration.Instance.apiURL, multipartFormSections);
+        request.SetRequestHeader("Authorization", "Bearer " + token);
+        request.downloadHandler = new DownloadHandlerBuffer();
+        yield return request.SendWebRequest();
+
+        if (request.responseCode == 401)
+        {
+            // Your token expired. You will need to get a new one.
+            yield break;
+        }
+
+        if (request.responseCode != 200)
+        {
+            Logger.LogError($"UnityWebRequest failed with status code {request.responseCode} - {request.result.ToString()}");
+            yield break;
+        }
+
+        byte[] audioData = request.downloadHandler.data;
+        // This directory should be replaced with one of user election.
+        string path = Path.Combine(Rocket.Unturned.Environment.RocketDirectory, $"{key} - {fileTimeUTC}.wav");
+        File.WriteAllBytes(path, audioData);
     }
 
     protected override void Unload()
