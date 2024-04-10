@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using HarmonyLib;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Rocket.API;
 using Rocket.Core.Plugins;
@@ -23,10 +24,15 @@ public class SVDLibrary : RocketPlugin<Configuration>
 
     private string token = string.Empty;
 
+    private Harmony harmony;
+
     protected override void Load()
     {
         Instance = this;
         Voices = new();
+
+        harmony = new("com.seniors.svdlibrary");
+        harmony.PatchAll(this.Assembly);
 
         Provider.onEnemyConnected += OnEnemyConnected;
         Level.onLevelLoaded += OnLevelLoaded;
@@ -131,6 +137,8 @@ public class SVDLibrary : RocketPlugin<Configuration>
         Voices.Clear();
 
         StopCoroutine(SaveVoices());
+
+        harmony.UnpatchAll(harmony.Id);
 
         Provider.onEnemyConnected -= OnEnemyConnected;
         Level.onLevelLoaded -= OnLevelLoaded;
