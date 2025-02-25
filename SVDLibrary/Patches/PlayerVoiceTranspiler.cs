@@ -49,7 +49,7 @@ class PlayerVoiceTranspiler
         }
 
         FieldInfo? rpcField = typeof(PlayerVoice).GetField("SendPlayVoiceChat", BindingFlags.NonPublic | BindingFlags.Static);
-        if (readbytesPtr == null)
+        if (rpcField == null)
         {
             Logger.LogWarning($"{method.FullDescription()} - Failed to find PlayerVoice.SendPlayVoiceChat.");
             return instructions;
@@ -133,9 +133,9 @@ class PlayerVoiceTranspiler
                 ins.Insert(i + 4, new CodeInstruction(OpCodes.Ldfld, offsetLocal));
                 ins.Insert(i + 5, new CodeInstruction(startInstruction.opcode, startInstruction.operand));
                 ins.Insert(i + 6, new CodeInstruction(OpCodes.Ldfld, lengthLocal));
-
                 ins.Insert(i + 7, new CodeInstruction(OpCodes.Newobj, arrSegmentCtor));
                 ins.Insert(i + 8, new CodeInstruction(OpCodes.Call, invokeTarget));
+                ins[i + 9].MoveLabelsTo(ins[i]);
                 success = true;
                 break;
             }
