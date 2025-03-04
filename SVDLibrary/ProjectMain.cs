@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Environment = Rocket.Unturned.Environment;
 using Logger = Rocket.Core.Logging.Logger;
 
 namespace SeniorS.SVDLibrary;
@@ -23,17 +24,18 @@ public class SVDLibrary : RocketPlugin<Configuration>
     public static SVDLibrary Instance;
     public Dictionary<ulong, List<byte[]>> Voices;
 
-    private string token = string.Empty;
-
-    private Harmony harmony;
+    public string Token = string.Empty;
+    private Harmony _harmony;
 
     protected override void Load()
     {
         Instance = this;
-        Voices = new();
+        Voices = new Dictionary<ulong, List<byte[]>>();
 
-        harmony = new("com.seniors.svdlibrary");
-        harmony.PatchAll(this.Assembly);
+        _harmony = new Harmony("com.seniors.svdlibrary");
+        _harmony.PatchAll(this.Assembly);
+
+        StartCoroutine(SaveVoices());
 
         Provider.onEnemyConnected += OnEnemyConnected;
         Level.onLevelLoaded += OnLevelLoaded;
@@ -44,28 +46,28 @@ public class SVDLibrary : RocketPlugin<Configuration>
 
     // This probably wouldn't be the best idea of using it.
     // The best will to only convert data when required.
-    // Example: User A reported User B, only then, convert the voice data of this players.
+    // Example: User A reported User B, only then, convert the voice data of these players.
     private IEnumerator SaveVoices()
     {
-        int interval = 300;
-        while( Instance != null)
+        while(Instance)
         {
-            yield return new WaitForSeconds(interval);
-            long fileTimeUTC = DateTime.UtcNow.ToFileTimeUtc();
-            foreach (var data in Voices)
+            yield return new WaitForSeconds(20);
+            long fileTimeUtc = DateTime.UtcNow.ToFileTimeUtc();
+            foreach (KeyValuePair<ulong, List<byte[]>> data in Voices)
             {
+                Logger.Log($"Sending data of {data.Key}");
                 Task.Run(async () =>
                 {
                     try
                     {
-                        using HttpClient client = new HttpClient();
-                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                        using HttpClient client = new();
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token);
                         string decoderURL = $"{Configuration.Instance.apiURL}/decoder";
-
+                        
                         string jsonData = JsonConvert.SerializeObject(new { source = data.Value });
-                        StringContent content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+                        StringContent content = new(jsonData, Encoding.UTF8, "application/json");
                         HttpResponseMessage response = await client.PostAsync(decoderURL, content);
-
+                        
                         if(response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         {
                             // Your token expired. You will need to get a new one.
@@ -74,9 +76,9 @@ public class SVDLibrary : RocketPlugin<Configuration>
                         if (response.IsSuccessStatusCode)
                         {
                             byte[] audioData = await response.Content.ReadAsByteArrayAsync();
-
+                            
                             // This directory should be replaced with one of user election.
-                            string path = Path.Combine(Rocket.Unturned.Environment.RocketDirectory, $"{data.Key} - {fileTimeUTC}.wav");
+                            string path = Path.Combine(Environment.RocketDirectory, $"{data.Key} - {fileTimeUtc}.wav");
                             File.WriteAllBytes(path, audioData);
                         }
                         else
@@ -112,14 +114,14 @@ public class SVDLibrary : RocketPlugin<Configuration>
         {
             try
             {
-                using HttpClient client = new HttpClient();
+                using HttpClient client = new();
                 string authenticationUrl = $"{Configuration.Instance.apiURL}/authentication?username={Configuration.Instance.username}&key={Configuration.Instance.key}";
                 using HttpResponseMessage response = await client.GetAsync(authenticationUrl);
                 if (response.IsSuccessStatusCode)
                 {
                     JObject responseObj = JObject.Parse(await response.Content.ReadAsStringAsync());
                     string token = responseObj["token"].Value<string>();
-                    this.token = token;
+                    this.Token = token;
                 }
                 else
                 {
@@ -174,7 +176,7 @@ public class SVDLibrary : RocketPlugin<Configuration>
 
         StopCoroutine(SaveVoices());
 
-        harmony.UnpatchAll(harmony.Id);
+        _harmony.UnpatchAll(_harmony.Id);
 
         Provider.onEnemyConnected -= OnEnemyConnected;
         Level.onLevelLoaded -= OnLevelLoaded;

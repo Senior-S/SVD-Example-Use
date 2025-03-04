@@ -1,7 +1,11 @@
 # SVD Example Plugin
 Example plugin on how to use the SVD API.
 
-To get info about the API, [click here](https://www.sshost.club/).
+# What's SVD?
+Steam Voice Decoder was originally an API which let's you decode any steam voice packet into a wav file, recently it got the encode endpoint too, which lets you send any wav data and receive the packets ready to be send.
+The API is 100% free but it requires a whitelist, to get into the whitelist join my discord and open a ticket.
+
+[![](https://dcbadge.limes.pink/api/server/https://discord.gg/Y3jD5K2Q8C)](https://discord.gg/Y3jD5K2Q8C)
 
 ### Disclaimer:
 This is an example on how to use the SVD API, probably, a exception of the [Transpiler](https://github.com/Senior-S/SVD-Example-Use/blob/main/SVDLibrary/Patches/PlayerVoiceTranspiler.cs) class, everything else should be changed and adapted to your specific use.

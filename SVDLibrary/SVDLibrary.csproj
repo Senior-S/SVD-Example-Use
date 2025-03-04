@@ -32,8 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony, Version=2.3.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lib.Harmony.2.3.3\lib\net48\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=2.3.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Lib.Harmony.2.3.5\lib\net48\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>F:\Program Files (x86)\Steam\steamapps\common\Unturned\Unturned_Data\Managed\Assembly-CSharp.dll</HintPath>
@@ -282,7 +282,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\SendAudio.cs" />
     <Compile Include="Configuration.cs" />
+    <Compile Include="Helpers\WavReader.cs" />
+    <Compile Include="Models\AudioRequest.cs" />
     <Compile Include="Patches\PlayerVoiceTranspiler.cs" />
     <Compile Include="ProjectMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -291,6 +294,5 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
